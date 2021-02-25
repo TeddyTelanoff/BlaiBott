@@ -3,6 +3,10 @@
 #include "Common/Common.h"
 #undef SendMessage
 
+class Client;
+Client s_Client;
+volatile bool s_ShouldExit;
+
 class Client: public Symple::Net::Client<BlaiMessage>
 {
 public:
@@ -20,10 +24,16 @@ public:
         // msg >> len;
         // std::cout << "Length = " << len << '\n';
     }
-};
 
-Client client;
-volatile bool s_ShouldExit;
+    void SendGoodbye()
+    {
+        Symple::Net::Message<BlaiMessage> msg;
+        msg.Header.Id = BlaiMessage::Goodbye;
+        Send(msg);
+
+        s_ShouldExit = true;
+    }
+};
 
 void ConsoleCheckThread()
 {
@@ -33,27 +43,27 @@ void ConsoleCheckThread()
 		std::getline(std::cin, line);
 
 		if (line == "/exit" || line == "/leave")
-			s_ShouldExit = true;
+			s_Client.SendGoodbye();
 		else if (line == "/test")
 			puts("Test works!");
         else
         {
-            client.SendMessage(line);
+            s_Client.SendMessage(line);
         }
     }
 }
 
 int main()
 {
-    client.Connect("127.0.0.1", BLAI_PORT);
+    s_Client.Connect("127.0.0.1", BLAI_PORT);
     
     std::thread consoleCheckThread(ConsoleCheckThread);
 
-    while (!(s_ShouldExit |= !client.IsConnected()))
+    while (!(s_ShouldExit |= !s_Client.IsConnected()))
     {
-        if (!client.IncomingMessages().IsEmpty())
+        if (!s_Client.IncomingMessages().IsEmpty())
         {
-            auto msg = client.IncomingMessages().PopFront().Message;
+            auto msg = s_Client.IncomingMessages().PopFront().Message;
 
             switch (msg.Header.Id)
             {
