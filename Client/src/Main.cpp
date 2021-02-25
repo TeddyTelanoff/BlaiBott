@@ -3,16 +3,16 @@
 #include "Common/Common.h"
 #undef SendMessage
 
-class Client;
-Client s_Client;
-volatile bool s_ShouldExit;
 
 class Client: public Symple::Net::Client<BlaiMessage>
 {
 public:
+    uint32_t m_Id;
+public:
     void SendMessage(const std::string &str)
     {
         Symple::Net::Message<BlaiMessage> msg;
+        msg.Header.Id = BlaiMessage::Message;
         for (auto c : str)
             msg << c;
         msg << (uint32_t)str.length();
@@ -30,15 +30,19 @@ public:
         Symple::Net::Message<BlaiMessage> msg;
         msg.Header.Id = BlaiMessage::Goodbye;
         Send(msg);
-
-        s_ShouldExit = true;
     }
 };
+
+Client s_Client;
+volatile bool s_ShouldExit;
 
 void ConsoleCheckThread()
 {
     while (!s_ShouldExit)
     {
+        printf("[Client #%u]: ", s_Client.m_Id);
+
+
         std::string line;
 		std::getline(std::cin, line);
 
@@ -69,6 +73,7 @@ int main()
             {
             case BlaiMessage::Welcome:
                 puts("[Server]: Welcome to server!");
+                msg >> s_Client.m_Id;
                 break;
             }
         }

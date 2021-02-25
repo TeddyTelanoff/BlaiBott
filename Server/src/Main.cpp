@@ -12,6 +12,7 @@ protected:
 	{
 		Symple::Net::Message<BlaiMessage> msg;
 		msg.Header.Id = BlaiMessage::Welcome;
+		msg << client->GetId();
 		client->Send(msg);
 
 		return true;
@@ -23,8 +24,10 @@ protected:
 
 		switch (msg.Header.Id)
 		{
-		case BlaiMessage::Welcome:
+		case BlaiMessage::Message:
 		{
+			MessageAllClients(msg, client);
+
 			uint32_t len;
 			msg >> len;
 			char *buff;
@@ -37,6 +40,13 @@ protected:
 			for (uint32_t i = len; i >= 1; i--)
 				msg >> buff[i - 1];
 			// std::cout << "Length: " << len << ", Buffer: " << buff << '\n';
+
+			printf("[Client #%u]: %s\n", client->GetId(), buff);
+			break;
+		}
+		case BlaiMessage::Goodbye:
+		{
+			client->Disconnect();
 			break;
 		}
 		}
