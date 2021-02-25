@@ -1,6 +1,6 @@
 #include <Symple/Net/Client.h>
 
-#include "Common.h"
+#include "Common/Common.h"
 
 class Client: public Symple::Net::Client<BlaiMessage>
 {
@@ -16,7 +16,7 @@ void ConsoleCheckThread()
         std::string line;
 		std::getline(std::cin, line);
 
-		if (line == "exit" || line == "leave")
+		if (line == "/exit" || line == "/leave")
 			s_ShouldExit = true;
     }
 }

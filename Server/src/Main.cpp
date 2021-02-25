@@ -1,6 +1,6 @@
 #include <Symple/Net/Server.h>
 
-#include "Common.h"
+#include "Common/Common.h"
 
 class Server: public Symple::Net::Server<BlaiMessage>
 {
@@ -29,7 +29,7 @@ void ConsoleCheckThread()
         std::string line;
 		std::getline(std::cin, line);
 
-		if (line == "exit" || line == "stop")
+		if (line == "/exit" || line == "/stop")
 			s_ShouldExit = true;
     }
 }
