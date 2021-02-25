@@ -5,4 +5,5 @@
 enum class BlaiMessage: uint32_t
 {
     Welcome,
+    Goodbye,
 };

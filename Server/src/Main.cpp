@@ -16,8 +16,32 @@ protected:
 
 		return true;
 	}
+
+	virtual void OnMessageRecieve(std::shared_ptr<Symple::Net::Connection<BlaiMessage>> client, Symple::Net::Message<BlaiMessage> &msg) override
+	{
+		std::cout << "Message: " << msg << '\n';
+
+		switch (msg.Header.Id)
+		{
+		case BlaiMessage::Welcome:
+		{
+			uint32_t len;
+			msg >> len;
+			char *buff;
+			if (len > 255)
+				buff = new char[len + 1];
+			else
+				buff = (char *)alloca(len + 1);
+			buff[len] = 0;
+
+			for (uint32_t i = len; i >= 1; i--)
+				msg >> buff[i - 1];
+			// std::cout << "Length: " << len << ", Buffer: " << buff << '\n';
+			break;
+		}
+		}
+	}
 public:
-	
 };
 
 volatile bool s_ShouldExit;
@@ -31,6 +55,8 @@ void ConsoleCheckThread()
 
 		if (line == "/exit" || line == "/stop")
 			s_ShouldExit = true;
+		else if (line == "/test")
+			puts("Test works!");
     }
 }
 
