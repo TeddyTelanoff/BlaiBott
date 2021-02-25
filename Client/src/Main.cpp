@@ -3,7 +3,9 @@
 #include "Common.h"
 
 class Client: public Symple::Net::Client<BlaiMessage>
-{};
+{
+public:
+};
 
 volatile bool s_ShouldExit;
 

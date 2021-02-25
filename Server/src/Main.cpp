@@ -16,6 +16,8 @@ protected:
 
 		return true;
 	}
+public:
+	
 };
 
 volatile bool s_ShouldExit;
