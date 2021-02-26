@@ -12,6 +12,8 @@ namespace Symple::Net
 	private:
 		std::mutex m_Mutex;
 		std::deque<T> m_Deq;
+
+		std::mutex m_BlockMutex;
 		std::condition_variable m_Blocking;
 	public:
 		ThreadSafeQueue() = default;
@@ -47,12 +49,18 @@ namespace Symple::Net
 		{
 			SYNCHRONIZED;
 			m_Deq.emplace_back(std::move(item));
+
+			std::unique_lock<std::mutex> ul(m_BlockMutex);
+			m_Blocking.notify_one();
 		}
 
 		void PushFront(const T &item)
 		{
 			SYNCHRONIZED;
 			m_Deq.emplace_fron(std::move(item));
+
+			std::unique_lock<std::mutex> ul(m_BlockMutex);
+			m_Blocking.notify_one();
 		}
 
 		bool IsEmpty()
@@ -93,7 +101,7 @@ namespace Symple::Net
 		{
 			while (IsEmpty())
 			{
-				std::unique_lock<std::mutex> lock(m_Mutex);
+				std::unique_lock<std::mutex> lock(m_BlockMutex);
 				m_Blocking.wait(lock);
 			}
 		}

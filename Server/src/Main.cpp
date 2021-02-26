@@ -52,6 +52,10 @@ protected:
 		}
 	}
 public:
+	std::string Answer(std::string_view msg)
+	{
+		
+	}
 };
 
 volatile bool s_ShouldExit;
@@ -78,7 +82,7 @@ int main()
     std::thread consoleCheckThread(ConsoleCheckThread);
 
     while (!s_ShouldExit)
-        server.Update(false);
+        server.Update();
 
 	if (consoleCheckThread.joinable())
 		consoleCheckThread.join();

@@ -42,12 +42,14 @@ void ConsoleCheckThread()
     {
         printf("[Client #%u]: ", s_Client.m_Id);
 
-
         std::string line;
 		std::getline(std::cin, line);
 
 		if (line == "/exit" || line == "/leave")
+        {
 			s_Client.SendGoodbye();
+            break;
+        }
 		else if (line == "/test")
 			puts("Test works!");
         else

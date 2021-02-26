@@ -17,9 +17,10 @@ namespace Symple::Net
 
 		asio::ip::tcp::acceptor m_AsioAcceptor;
 		uint32_t m_IdCounter = 0;
+		ScrambleFunction m_Scramble;
 	public:
-		Server(uint16_t port)
-			: m_AsioAcceptor(m_AsioContext, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
+		Server(uint16_t port, ScrambleFunction scrambleFn = Scramble)
+			: m_AsioAcceptor(m_AsioContext, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), m_Scramble(scrambleFn)
 		{ }
 
 		virtual ~Server()
@@ -32,12 +33,16 @@ namespace Symple::Net
 				WaitForClientConnection();
 				m_ContextThread = std::thread([this]() { m_AsioContext.run(); });
 
-				std::cout << "[!]<Server>: Started!\n";
+				#if defined(SY_NET_ENABLE_LOGGING)
+				std::cout << "[$]<Server>: Started!\n";
+				#endif
 				return true;
 			}
 			catch (std::exception &e)
 			{
+				#if !defined(SY_NET_DISABLE_EXCEPTION_LOGGING)
 				std::cerr << "[!]<Server> Exception: " << e.what() << '\n';
+				#endif
 				return false;
 			}
 		}
@@ -48,7 +53,9 @@ namespace Symple::Net
 			if (m_ContextThread.joinable())
 				m_ContextThread.join();
 
-			std::cerr << "[!]<Server>: Stopped!\n";
+			#if defined(SY_NET_ENABLE_LOGGING)
+			std::cerr << "[$]<Server>: Stopped!\n";
+			#endif
 		}
 
 		[[async]] void WaitForClientConnection()
@@ -57,23 +64,36 @@ namespace Symple::Net
 				[this](std::error_code ec, asio::ip::tcp::socket socket)
 				{
 					if (ec)
+					{
+						#if defined(SY_NET_ENABLE_LOGGING)
 						std::cerr << "[!]<Server> New connection error: " << ec.message() << '\n';
+						#endif
+					}
 					else
 					{
+						#if defined(SY_NET_ENABLE_LOGGING)
 						std::cout << "[$]<Server> New connection: " << socket.remote_endpoint() << '\n';
+						#endif
 
 						std::shared_ptr<Connection<T>> client = std::make_shared<Connection<T>>(Connection<T>::Owner::Server,
-							m_AsioContext, std::move(socket), m_RecievedMessages);
+							m_AsioContext, std::move(socket), m_RecievedMessages,
+								m_Scramble);
 
 						if (OnClientConnect(client))
 						{
 							m_Connections.push_back(std::move(client));
-							m_Connections.back()->ConnectToClient(m_IdCounter++);
+							m_Connections.back()->ConnectToClient(this, m_IdCounter++);
 
-							std::cout << "[$]<Client #" << m_Connections.back()->GetId() << ">: Connection approved!\n";
+							#if defined(SY_NET_ENABLE_LOGGING)
+							std::cout << "[$]<Server> Client #" << m_Connections.back()->GetId() << ": Connection approved!\n";
+							#endif
 						}
 						else
-							std::cout << "[$]: Connection denied!\n";
+						{
+							#if defined(SY_NET_ENABLE_LOGGING)
+							std::cout << "[1]<Server>: Connection denied!\n";
+							#endif
+						}
 					}
 
 					WaitForClientConnection();
@@ -133,6 +153,10 @@ namespace Symple::Net
 	protected:
 		virtual bool OnClientConnect(std::shared_ptr<Connection<T>> client)
 		{ return true; }
+
+		friend class Connection<T>;
+		virtual void OnClientValidated(std::shared_ptr<Connection<T>> client)
+		{ }
 
 		virtual void OnClientDisconnect(std::shared_ptr<Connection<T>> client)
 		{ }
